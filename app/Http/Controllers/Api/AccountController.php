@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Exception;
 
 
 class AccountController extends Controller
@@ -144,4 +145,104 @@ class AccountController extends Controller
     $suffix = rand(1000000000, 9999999999);  // Génération aléatoire de 10 chiffres
     return $prefix . $suffix;
 }
+
+
+public function rechargeClientAccount(Request $request, $clientAccountId)
+{
+    // Validation du montant de recharge
+    $validated = $request->validate([
+        'montant' => 'required|numeric|min:1',  // Le montant doit être un nombre supérieur ou égal à 1
+    ]);
+
+    try {
+        // Trouver le compte client par son ID
+        $clientAccount = AccountModel::findOrFail($clientAccountId);
+
+        // Vérification si le compte est activé
+        if (!$clientAccount->account_activated) {
+            return response()->json([
+                'status_code' => 400,
+                'message' => 'Le compte du client est désactivé. Recharge impossible.',
+            ], 400);
+        }
+
+        // Ajouter le montant au solde actuel du client
+        $clientAccount->solde = (float)$clientAccount->solde + $validated['montant'];
+
+        // Sauvegarder les modifications dans la base de données
+        $clientAccount->save();
+
+        // Retourner une réponse confirmant le rechargement du solde
+        return response()->json([
+            'status_code' => 200,
+            'message' => 'Le solde du compte client a été rechargé avec succès.',
+            'nouveau_solde' => $clientAccount->solde,
+        ]);
+    } catch (Exception $e) {
+        // Gestion des erreurs
+        return response()->json([
+            'status_code' => 500,
+            'message' => 'Erreur lors du rechargement du solde du compte client.',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+//Cette methode permet de bloquer le compte d'un client Button 2
+public function blockAccount(Request $request, $clientAccountId)
+{
+    try {
+        // Récupérer le compte client par son ID
+        $clientAccount = AccountModel::findOrFail($clientAccountId);
+
+        // Mettre à jour le statut de blocage du compte
+        $clientAccount->is_locked = true;
+        $clientAccount->save();
+
+        return response()->json([
+            'status_code' => 200,
+            'message' => 'Le compte a été bloqué avec succès.'
+        ]);
+    } catch (Exception $e) {
+        return response()->json([
+            'status_code' => 500,
+            'message' => 'Échec de la tentative de blocage du compte.',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
+public function unblockClientAccount(Request $request, $clientAccountId)
+{
+    try {
+        // Trouver le compte client par son ID
+        $clientAccount = AccountModel::findOrFail($clientAccountId);
+
+        // Mettre à jour le statut du compte à 'activé'
+        $clientAccount->account_activated = true;
+
+        // Supprimer la raison de la désactivation
+        $clientAccount->desactivation_raison = null;
+
+        // Sauvegarder les modifications
+        $clientAccount->save();
+
+        // Retourner une réponse confirmant que le compte a été débloqué
+        return response()->json([
+            'status_code' => 200,
+            'message' => 'Le compte client a été débloqué avec succès.',
+        ]);
+    } catch (Exception $e) {
+        // Gestion des erreurs
+        return response()->json([
+            'status_code' => 500,
+            'message' => 'Erreur lors du déblocage du compte client.',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+
+
 }
