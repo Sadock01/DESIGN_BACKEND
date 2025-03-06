@@ -22,7 +22,8 @@ return new class extends Migration
             $table->string('transaction_type')->required();
             $table->string('transaction_amount');
             $table->string('transaction_status')->default('pending');
-            $table->string('transaction_message')->nullable();
+            $table->string('transaction_desactivated')->default(false);
+            $table->string('transaction_reason')->nullable();
             $table->timestamps();
         });
     }

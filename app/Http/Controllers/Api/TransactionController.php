@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AccountModel;
 use App\Models\TransactionModel;
 use Illuminate\Http\Request;
 use App\Models\Transaction;
@@ -9,80 +10,158 @@ use Illuminate\Support\Facades\Auth;
 
 class TransactionController extends Controller
 {
-    // Créer une transaction
+
+    public function index(Request $request, $clientAccountId)
+{
+    try {
+        // Début de la requête pour récupérer les transactions
+        $query = TransactionModel::where('client_account_id', $clientAccountId);
+
+        // Filtrer par recherche (par description de la transaction, nom du bénéficiaire, etc.)
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where('transaction_description', 'LIKE', "%$search%")
+                  ->orWhere('beneficiary_name', 'LIKE', "%$search%");
+        }
+
+        // Pagination : nombre d'éléments par page (par défaut 10)
+        $perPage = $request->input('per_page', 10);
+        $transactions = $query->orderBy('transaction_date', 'desc')->paginate($perPage);
+
+        return response()->json([
+            'status_code' => 200,
+            'message' => 'Liste des transactions récupérée avec succès.',
+            'data' => $transactions,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status_code' => 500,
+            'message' => 'Erreur lors de la récupération des transactions.',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+
     public function createTransaction(Request $request)
     {
+        // Validation des données envoyées par le Front-End
         $request->validate([
-            'beneficiary_id' => 'required|exists:beneficiaries,id',
+            'beneficiary_name' => 'required|string',
+            'beneficiary_iban' => 'required|string',
             'client_account_id' => 'required|exists:client_account,id',
-            'transaction_type' => 'required|string',
+            'transaction_type' => 'required|string', // Le type de transaction vient du Front
+            'transaction_description' => 'required|string',
             'transaction_amount' => 'required|numeric|min:1',
+            'transaction_message' => 'nullable|string',
         ]);
-
+    
+        // Création de la transaction avec les données du Front
         $transaction = TransactionModel::create([
-            'client_id' => Auth::id(),
-            'beneficiary_id' => $request->beneficiary_id,
             'client_account_id' => $request->client_account_id,
-            'transaction_type' => $request->transaction_type,
+      
+            'transaction_date' => now(), // Date de la transaction = aujourd'hui
+            'transaction_description' => $request->transaction_description,
+            'beneficiary_name' => $request->beneficiary_name,
+            'beneficiary_iban' => $request->beneficiary_iban,
+            'transaction_type' => $request->transaction_type, // Récupéré du Front-End
             'transaction_amount' => $request->transaction_amount,
-            'transaction_status' => 'pending',
+            'transaction_status' => 'pending', // Statut par défaut
+            'transaction_desactivated' => false, // La transaction est active par défaut
+            'transaction_message' => $request->transaction_message,
         ]);
-
+    
         return response()->json([
             'status' => 201,
             'message' => 'Transaction créée avec succès',
             'transaction' => $transaction
-        ]);
+        ], 201);
     }
+   
+   
 
-    // Lister les transactions d'un client
-    public function getClientTransactions()
+    public function getTransactions()
     {
+        // Récupérer les transactions du client connecté
         $transactions = TransactionModel::where('client_id', Auth::id())->get();
-
+    
         return response()->json([
             'status' => 200,
             'transactions' => $transactions
         ]);
     }
-
-   
-    public function checkTransactionStatus($id)
+    
+    public function validateTransaction($transactionId)
     {
-        $transaction = TransactionModel::findOrFail($id);
-
-        // Vérifier si la transaction appartient au client connecté
-        if ($transaction->client_id !== Auth::id()) {
+        // Récupérer la transaction
+        $transaction = TransactionModel::find($transactionId);
+        if (!$transaction) {
             return response()->json([
-                'status' => 403,
-                'message' => 'Accès refusé'
-            ], 403);
+                'status' => 404,
+                'message' => 'Transaction introuvable.'
+            ], 404);
         }
-
+    
+        // Vérifier si la transaction est déjà validée
+        if ($transaction->transaction_status === 'approved') {
+            return response()->json([
+                'status' => 400,
+                'message' => 'Cette transaction a déjà été approuvée.'
+            ], 400);
+        }
+    
+        // Récupérer le compte client
+        $clientAccount = AccountModel::find($transaction->client_account_id);
+        if (!$clientAccount) {
+            return response()->json([
+                'status' => 404,
+                'message' => 'Compte client introuvable.'
+            ], 404);
+        }
+    
+        // Valider la transaction (changement de statut)
+        $transaction->transaction_status = 'approved';
+        $transaction->transaction_date = now(); // Date de validation
+        $transaction->save();
+    
+        // Ajouter automatiquement le montant au solde du client
+        $clientAccount->balance -= $transaction->transaction_amount;
+        $clientAccount->save();
+    
         return response()->json([
             'status' => 200,
-            'transaction_status' => $transaction->transaction_status
+            'message' => 'Transaction approuvée et montant ajouté au solde.',
+            'transaction' => $transaction,
+            'new_balance' => $clientAccount->balance
         ]);
     }
-
-    // Mettre à jour le statut d'une transaction (ADMIN)
-    public function updateTransactionStatus(Request $request, $id)
+    public function updateTransactionMessage($transactionId, Request $request)
 {
+    // Validation du message
     $request->validate([
-        'transaction_status' => 'required|in:pending,completed,failed',
+        'transaction_message' => 'required|string', // Validation du message
     ]);
 
-    $transaction = TransactionModel::findOrFail($id);
+    try {
+        // Récupérer la transaction
+        $transaction = TransactionModel::findOrFail($transactionId);
 
-    // Mettre à jour le statut directement
-    $transaction->transaction_status = $request->transaction_status;
-    $transaction->save();
+        // Mettre à jour le message
+        $transaction->update([
+            'transaction_message' => $request->transaction_message,
+        ]);
 
-    return response()->json([
-        'status' => 200,
-        'message' => 'Statut de la transaction mis à jour avec succès',
-        'transaction' => $transaction
-    ]);
+        return response()->json([
+            'status_code' => 200,
+            'message' => 'Message de la transaction mis à jour avec succès.',
+            'transaction' => $transaction
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status_code' => 500,
+            'message' => 'Erreur lors de la mise à jour du message.',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
 }
 
     

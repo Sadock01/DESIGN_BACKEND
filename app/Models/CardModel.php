@@ -15,6 +15,7 @@ class CardModel extends Model
         'date_expiration',
         'card_number',
         'cvv',
+        'card_activated',
         'client_account_id',
     ];
 

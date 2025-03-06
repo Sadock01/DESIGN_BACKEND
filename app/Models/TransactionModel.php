@@ -18,6 +18,8 @@ class TransactionModel extends Model
         'beneficiary_iban',
         'client_account_id',
         'transaction_type',
+        'transaction_desactivated',
+        'transaction_reason',
         'transaction_amount',
         'transaction_status',
     ];

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\TransactionModel;
 use Illuminate\Http\Request;
 use App\Models\BeneficiaryModel;
 use Illuminate\Support\Facades\Validator;
@@ -11,8 +12,7 @@ class BeneficiaryController extends Controller
 {
     /**
      * Afficher la liste des bénéficiaires avec pagination et recherche.
-     */
-    public function index(Request $request)
+     */  public function index(Request $request)
     {
         try {
             $query = BeneficiaryModel::query();

@@ -16,7 +16,8 @@ return new class extends Migration
             $table->date('date_validity');
             $table->date('date_expiration'); 
             $table->string('card_number')->unique();
-            $table->string('cvv'); 
+            $table->string('cvv');
+            $table->boolean('card_activated')->default(true); 
             $table->unsignedBigInteger('client_account_id');
             $table->foreign('client_account_id')->references('id')->on('client_account');
             $table->timestamps();
