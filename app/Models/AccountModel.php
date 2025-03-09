@@ -8,6 +8,8 @@ class AccountModel extends Model
 {
 
     use HasFactory;
+
+    protected $table = 'client_account';
     protected $fillable = [
         'solde',
         'iban',

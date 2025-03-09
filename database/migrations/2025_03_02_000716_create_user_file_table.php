@@ -17,8 +17,6 @@ return new class extends Migration
             $table->string('file_path');
             $table->unsignedBigInteger('client_id');
             $table->foreign('client_id')->references('id')->on('clients');
-            $table->unsignedBigInteger('client_account_id');
-            $table->foreign('client_account_id')->references('id')->on('client_account'); 
             $table->timestamps();
         });
     }

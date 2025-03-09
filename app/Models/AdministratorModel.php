@@ -19,4 +19,5 @@ class AdministratorModel extends Model
         'password',
         'remember_token',
     ];
+    protected $table = 'administrateurs';
 }
