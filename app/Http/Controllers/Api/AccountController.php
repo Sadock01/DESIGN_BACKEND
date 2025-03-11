@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AccountModel;
 use App\Models\ClientModel;
 use App\Models\CardModel;
+
 use App\Models\UserFileModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -95,7 +96,7 @@ class AccountController extends Controller
         // Création du compte bancaire avec l'ID du client
         $account = AccountModel::create([
             'client_id' => $client->id,
-            'solde' => $request->solde,
+            'solde' => 0,//
             'iban' => $request->iban,
             'bic' => $request->bic,
             'account_activated' => false,
@@ -122,7 +123,7 @@ class AccountController extends Controller
         DB::commit();
 
         return response()->json([
-            'status_code' => 201,
+            'status_code' => 200,
             'message' => 'Compte créé avec succès.',
             'client' => $client,
             'account' => $account,
@@ -148,6 +149,7 @@ class AccountController extends Controller
     $suffix = rand(1000000000, 9999999999);  // Génération aléatoire de 10 chiffres
     return $prefix . $suffix;
 }
+
 
 
 public function rechargeClientAccount(Request $request, $clientAccountId)

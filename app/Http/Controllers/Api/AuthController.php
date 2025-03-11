@@ -50,9 +50,9 @@ class AuthController extends Controller
             }
 
             // Vérification de l'état du compte (client ou administrateur)
-            if (!$user->status) {
+            if ($user instanceof ClientModel && !$user->status) {
                 return response()->json([
-                    'status_code' => 401,
+                    'status_code' => 201,
                     'message' => 'Votre compte est désactivé. Veuillez contacter l\'administrateur.',
                 ], 401);
             }

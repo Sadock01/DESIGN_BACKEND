@@ -32,14 +32,14 @@ class ClientModel extends Model
         'remember_token',
     ];
 
-    public function userFiles()
+    public function files()
     {
-        return $this->hasMany(UserFileModel::class);
+        return $this->hasMany(UserFileModel::class, 'client_id');
     }
 
-    public function clientAccount()
+    public function account()
     {
-        return $this->hasOne(AccountModel::class);
+        return $this->hasOne(AccountModel::class, 'client_id');
     }
     public function beneficiaires()
 {
