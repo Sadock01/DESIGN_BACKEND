@@ -66,12 +66,13 @@ class TransactionController extends Controller
             'transaction_type' => $request->transaction_type, // Récupéré du Front-End
             'transaction_amount' => $request->transaction_amount,
             'transaction_status' => 'pending', // Statut par défaut
-            'transaction_desactivated' => false, // La transaction est active par défaut
+            'transaction_on_code' => false, // La transaction est active par défaut
+            'transaction_messenger' => false,
             'transaction_message' => $request->transaction_message,
         ]);
     
         return response()->json([
-            'status' => 201,
+            'status_code' => 200,
             'message' => 'Transaction créée avec succès',
             'transaction' => $transaction
         ], 201);
@@ -85,7 +86,7 @@ class TransactionController extends Controller
         $transactions = TransactionModel::where('client_id', Auth::id())->get();
     
         return response()->json([
-            'status' => 200,
+            'status_code' => 200,
             'transactions' => $transactions
         ]);
     }
@@ -96,7 +97,7 @@ class TransactionController extends Controller
         $transaction = TransactionModel::find($transactionId);
         if (!$transaction) {
             return response()->json([
-                'status' => 404,
+                'status_code' => 404,
                 'message' => 'Transaction introuvable.'
             ], 404);
         }
@@ -104,7 +105,7 @@ class TransactionController extends Controller
         // Vérifier si la transaction est déjà validée
         if ($transaction->transaction_status === 'approved') {
             return response()->json([
-                'status' => 400,
+                'status_code' => 400,
                 'message' => 'Cette transaction a déjà été approuvée.'
             ], 400);
         }
@@ -113,7 +114,7 @@ class TransactionController extends Controller
         $clientAccount = AccountModel::find($transaction->client_account_id);
         if (!$clientAccount) {
             return response()->json([
-                'status' => 404,
+                'status_code' => 404,
                 'message' => 'Compte client introuvable.'
             ], 404);
         }
@@ -128,7 +129,7 @@ class TransactionController extends Controller
         $clientAccount->save();
     
         return response()->json([
-            'status' => 200,
+            'status_code' => 200,
             'message' => 'Transaction approuvée et montant ajouté au solde.',
             'transaction' => $transaction,
             'new_balance' => $clientAccount->balance

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('iban');
             $table->string('bic');
             $table->boolean('account_activated')->default(false); 
-            $table->string('desactivation_raison')->nullable();
+            $table->boolean('account_blocked')->default(false);
             $table->unsignedBigInteger('client_id'); 
             $table->foreign('client_id')->references('id')->on('clients');   
             $table->timestamps();

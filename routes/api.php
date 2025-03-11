@@ -5,7 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AuthController;
-
+use App\Http\Controllers\Api\BeneficiaryController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -17,3 +17,10 @@ Route::middleware(['auth:admin'])->group(function () {
 Route::post('account/create', [AccountController::class, 'createAccount']);
 
 Route::post('account/login', [AuthController::class, 'login']);
+
+
+Route::get('beneficiaries/list', [BeneficiaryController::class, 'index']); // Liste des bénéficiaires avec pagination et recherche
+Route::get('beneficiaries/{id}', [BeneficiaryController::class, 'show']); // Détails d'un bénéficiaire
+Route::post('bebeficiaries/create', [BeneficiaryController::class, 'store']); // Création d'un bénéficiaire
+Route::put('beneficiaries/{id}', [BeneficiaryController::class, 'update']); // Mise à jour d'un bénéficiaire
+Route::delete('/{id}', [BeneficiaryController::class, 'destroy']); 

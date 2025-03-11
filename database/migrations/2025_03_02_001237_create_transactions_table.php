@@ -19,10 +19,12 @@ return new class extends Migration
             $table->string('beneficiary_iban');
             $table->unsignedBigInteger('client_account_id');
             $table->foreign('client_account_id')->references('id')->on('client_account');
-            $table->string('transaction_type')->required();
+            $table->string('transaction_type');
             $table->string('transaction_amount');
             $table->string('transaction_status')->default('pending');
-            $table->string('transaction_desactivated')->default(false);
+            $table->string('transaction_messenger')->default(false);
+            $table->string('transaction_on_code')->default(false);
+            $table->string('transaction_code');
             $table->string('transaction_reason')->nullable();
             $table->timestamps();
         });

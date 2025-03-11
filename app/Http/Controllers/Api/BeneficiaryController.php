@@ -74,7 +74,7 @@ class BeneficiaryController extends Controller
             'BIC_code' => 'required|string|unique:beneficiaries',
             'IBAN_code' => 'required|string',
             'account_number' => 'required|string',
-            'client_account_id' => 'required|exists:client_accounts,id', // Vérifie si le compte existe
+            'client_account_id' => 'required|exists:client_account,id', // Vérifie si le compte existe
         ]);
 
         if ($validator->fails()) {
